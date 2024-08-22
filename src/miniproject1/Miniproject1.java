@@ -17,7 +17,7 @@ public class Miniproject1 {
 	private static Scanner sc = new Scanner(System.in);
 	private static String menuNo; //메뉴 선택을 위한 변수
 	private static String currentUserId;//현재 로그인한 사용자 ID를 저장하는 변수
-	private static boolean logout = false; // 로그아웃시키기 위한 변순
+	private static boolean logout = false; // 로그아웃시키기 위한 변수
 	
 	//페이지당 게시물 수
 	private static final int POSTS_PER_PAGE =10;
@@ -27,9 +27,10 @@ public class Miniproject1 {
 
 	public static void main(String[] args) {
 		try {
-			//클래스 이름을 문자열로 받아 해당 클래스를 동적으로 로드합니다.
+			//Class.forName("")메소드는 클래스 이름을 문자열로 받아 해당 클래스를 메모리에 동적으로 로드하고, 클래스의 class객체를 반환합니다.
 			//로드된 클래스는 JVM에 의해 메모리에 적재됩니다.
 			//oracle.jdbc.OracleDriver는 Oracle 디비에 접속하기 위한 JDBC 드라이버 클래스의 이름입니다. Oracle 디비와 연결을 지원합니다.
+			
 			Class.forName("oracle.jdbc.OracleDriver");
 			//데이터베이스 연결을 설정하고, connection객체를 반환합니다.
 			conn = DriverManager.getConnection(
@@ -39,13 +40,13 @@ public class Miniproject1 {
 			);
 					
 		} catch(Exception e) {
-			e.printStackTrace();
-			System.exit(0);
+			e.printStackTrace(); //예외가 발생한 위치와 예외가 발생하기까지의 메소드 호출 순서를 보여줌.
+			System.exit(0); //java프로그램을 강제로 종료시키는 메소드
 		}	
 		
 		//메인루프(초기화면)
 		while(true) {
-			System.out.println("---------------------------------");
+			System.out.println("--------------------");
 			System.out.println("미니 프로젝트 1차");
 			System.out.println("--------------------");
 			System.out.println();
@@ -80,7 +81,7 @@ public class Miniproject1 {
 				case "5":
 					System.out.println("프로그램을 종료합니다.");
 					System.exit(0);//프로그램 종료
-				default:
+				default: //1,2,3,4,5에 해당하지 않을 경우
 					System.out.println("잘못된 입력입니다. 다시 시도해주세요.");
 					break;					
 			}		
@@ -107,14 +108,20 @@ public class Miniproject1 {
 		
 		//비밀번호 초기화
 		try {
+			//실행할 sql쿼리 문자열을 정의(?는 파라미터(입력값) 자리 표시자로 실제값은 PreparedStatement 객체에서 설정)
 			String sql = "update member set mpassword=? where mid=? and mname=? and mphonenumber=?";
+			//conn객체는 데이터베이스 연결을 나타내는 Connection 객체입니다.
+			//PreparedStatement는 sql 쿼리를 실행하기 위한 객체입니다.
 			PreparedStatement pstmt = conn.prepareStatement(sql);
+			//파라미터 값 설정
 			pstmt.setString(1, newPassword);
 			pstmt.setString(2, id);
 			pstmt.setString(3, name);
 			pstmt.setString(4, phoneNumber);
 			
-			int rowsUpdated = pstmt.executeUpdate(); //결과 건수를 리턴해줌
+			//쿼리 실행 및 결과를 처리
+			//executeUpdate()메소드는 sql 쿼리를 실행하고, 결과 행의수를 반환합니다.
+			int rowsUpdated = pstmt.executeUpdate(); 
 			
 			if(rowsUpdated >0) {
 				System.out.println("비밀번호가 성공적으로 초기화 되었습니다.(초기화 비밀번호는 0000입니다.)");
@@ -122,6 +129,8 @@ public class Miniproject1 {
 				System.out.println("잘못 입력하셧습니다.");
 			}
 			
+			//PreparedStatement 객체를 닫아 리소스를 해제합니다.
+			//데이터베이스 자원의 누수를 방지하고, 시스템의 효율성을 유지하는데 중요합니다.
 			pstmt.close();
 		} catch(Exception e) {
 			e.printStackTrace();
@@ -139,19 +148,17 @@ public class Miniproject1 {
 		String name = sc.nextLine();
 		
 		System.out.println("전화번호: ");
-		String phoneNumber = sc.nextLine();
+		String phoneNumber = sc.nextLine();		
 		
-		ResultSet rs = null;
-		PreparedStatement pstmt = null;
-		
-		
+		//아이디 찾는 부분(이름과 전화번호 입력)
 		try {
 			String sql = "select mid from member where mname=? and mphonenumber=? and mdeleted=0";
-			pstmt = conn.prepareStatement(sql);
+			PreparedStatement pstmt = conn.prepareStatement(sql);
 			pstmt.setString(1, name);
 			pstmt.setString(2, phoneNumber);
 			
-			rs = pstmt.executeQuery();		
+			//executeQuery()메소드는 주로 select 쿼리를 실행하고, 쿼리 결과를 ResultSet 객체로 반환합니다.
+			ResultSet rs = pstmt.executeQuery();		
 			
 			if(rs.next()) {
 				//일치하는 아이디가 있는 경우
@@ -198,17 +205,18 @@ public class Miniproject1 {
 				String dbPassword = rs.getString("mpassword");
 				String mdeleted = rs.getString("mdeleted");
 				
-				//계정이 탈퇴되었는지 확인
+				//계정이 탈퇴(비활성화)되었는지 확인
 				if(mdeleted.equals("1")) {
 					System.out.println("해당 계정은 탈퇴된 계정입니다.");
 					return; //로그인 차단
 				}
 				
 				//입력한 비밀번호와 데이터베이스에 저장된 비밀번호가 일치하는지 확인
+				//dbPassword는 데이터베이스에 저장된 비밀번호, mpassword는 입력한 비밀번호
 				if(dbPassword.equals(mpassword)) {
 					System.out.println("로그인 성공! 환영합니다.");
 					
-					//관리자 여부 확인
+					//관리자 여부 확인(관리자만 사용하는 메뉴나 기능을 사용하기 위함)
 					String adminCheckSql = "select is_admin from member where mid=?";
 					PreparedStatement adminCheckPstmt = conn.prepareStatement(adminCheckSql);
 					adminCheckPstmt.setString(1,  mid);
@@ -225,10 +233,11 @@ public class Miniproject1 {
 					
 					
 					//로그인 처리(로그인 시간이 loginout_history,member테이블에 기록됌)
+					//데이터베이스의 current_timestamp 기능을 사용하여 자동으로 현재 시각으로 설정합니다.
 					String loginSql = "insert into loginout_history(mid,login_time) values(?,current_timestamp)";
 					PreparedStatement loginStmt = conn.prepareStatement(loginSql);
 					loginStmt.setString(1, mid);
-					loginStmt.executeUpdate();				
+					                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      loginStmt.executeUpdate();				
 					
 					
 					
@@ -548,11 +557,39 @@ public class Miniproject1 {
 			}
 			adminRs.close();
 			checkAdminPstmt.close();
-		
-			//회원 목록 조회
 			
-				String sql = "select mid, mname from member";
+			//전체 회원 수 계산
+			String sqlCount = "select count(*) as total from member where mdeleted=0";
+			PreparedStatement pstmtCount = conn.prepareStatement(sqlCount);
+			ResultSet rsCount = pstmtCount.executeQuery();
+			
+			int totalMembers=0;
+			
+			if(rsCount.next()) {
+				totalMembers = rsCount.getInt("total");
+				
+			}
+			rsCount.close();
+			pstmtCount.close();
+			
+			int totalPages = (int) Math.ceil((double) totalMembers / POSTS_PER_PAGE);
+			
+			if(currentPage>totalPages) {
+				System.out.println("존재하지 않는 페이지입니다.");
+				return;
+			}
+			
+			//offset은 현재 페이지가 몇번째 행에서 시작할지 정해주는것(건너뛸 행수)
+			int offset= (currentPage-1) * POSTS_PER_PAGE;
+					
+			//회원 목록 조회(페이징)
+				//row_number는 over 이후에 조건에 순서대로 순번을 매겨준다.
+				String sql = "select mid,mname from(" +
+						"select mid,mname, row_number() over (order by mid asc) as rn from member where mdeleted=0" +
+						") where rn > ? and rn <= ?";
 				PreparedStatement pstmt = conn.prepareStatement(sql);
+				pstmt.setInt(1, offset);
+				pstmt.setInt(2, offset+POSTS_PER_PAGE);			    
 				ResultSet rs = pstmt.executeQuery();
 				
 				System.out.println("회원 목록: ");
@@ -563,7 +600,51 @@ public class Miniproject1 {
 				}
 				
 				rs.close();
-				pstmt.close();		
+				pstmt.close();
+				
+				System.out.println("---------------------");
+				System.out.println("현재페이지: " + currentPage + "/" + totalPages);
+				System.out.println("1. 다음페이지");
+				System.out.println("2. 이전페이지");
+				System.out.println("3. 특정 페이지 이동");
+				System.out.println("4. 이전화면으로");
+				System.out.println("");
+				System.out.println("원하는 메뉴는? ");
+				
+				String menuNo = sc.nextLine();
+				switch(menuNo) {
+					case "1":
+						if(currentPage < totalPages) {
+							currentPage++;
+							viewMemberList(mid);
+						} else {
+							System.out.println("더 이상 다음 페이지가 없습니다.");
+						}
+						break;
+					case "2":
+						if(currentPage >1) {
+							currentPage--;
+							viewMemberList(mid);
+						} else {
+							System.out.println("더 이상 이전 페이지가 없습니다.");
+						}
+						break;
+					case "3":
+						System.out.println("이동할 페이지 번호: ");
+						int pageNumber = Integer.parseInt(sc.nextLine());
+						if(pageNumber>=1 && pageNumber <= totalPages) {
+							currentPage = pageNumber;
+							viewMemberList(mid);
+						} else {
+							System.out.println("존재하지 않는 페이지입니다.");
+						}
+						break;
+					case "4":
+						return; //이전 메뉴로 이동
+					default:
+						System.out.println("잘못된 선택입니다. 다시 시도해주세요.");
+						break;
+				}
 		
 		} catch(Exception e) {
 			e.printStackTrace();
@@ -969,7 +1050,7 @@ public class Miniproject1 {
 			member.setMpassword(sc.nextLine());
 			
 			System.out.print("이름: ");				
-			member.setMname(sc.nextLine());
+			member.setMname(sc.nextLine());			
 			
 			System.out.print("전화번호: ");
 			member.setMphoneNumber(sc.nextLine());
@@ -1003,8 +1084,7 @@ public class Miniproject1 {
 					if(count>0) {
 						System.out.println("이미 존재하는 아이디입니다.");
 						return;
-					}
-					
+					}				
 					
 					String sql ="insert into member (mid,mpassword,mname,mphonenumber,maddress,msex) values(?, ?, ?, ?, ?, ?)";					
 						PreparedStatement pstmt = conn.prepareStatement(sql);
